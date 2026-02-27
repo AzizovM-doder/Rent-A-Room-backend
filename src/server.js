@@ -129,7 +129,7 @@ const fs = require("fs");
 const uploadsDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅  Rent-A-Room API  →  http://localhost:${PORT}`);
   console.log(`📖  Swagger UI      →  http://localhost:${PORT}/api-docs`);
   console.log(`👤  JWT auth active  →  POST /auth/login`);
