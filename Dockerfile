@@ -25,15 +25,12 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
-ENV PORT=3000
 
 # Copy installed node_modules (includes generated Prisma client)
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
 COPY package.json ./
-
-EXPOSE 3000
 
 # Run migrations then start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
