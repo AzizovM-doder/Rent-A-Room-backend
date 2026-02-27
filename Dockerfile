@@ -32,5 +32,5 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
 COPY package.json ./
 
-# Run migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
+# Run the server
+CMD ["npm", "start"]
