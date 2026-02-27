@@ -21,6 +21,9 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Install openssl for Prisma
+RUN apk add --no-cache openssl
+
 ENV NODE_ENV=production
 ENV PORT=3000
 
