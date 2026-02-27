@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+# ── Build stage ──────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies (including Prisma CLI)
+COPY package*.json ./
+RUN npm ci
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Copy source
+COPY src ./src
+
+# ── Production image ──────────────────────────────────────────────
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy installed node_modules (includes generated Prisma client)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src ./src
+COPY package.json ./
+
+EXPOSE 3000
+
+# Run migrations then start the server
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
