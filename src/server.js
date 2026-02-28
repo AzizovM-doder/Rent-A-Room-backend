@@ -75,7 +75,7 @@ const swaggerOptions = {
     },
     servers: [
       { url: `http://localhost:${PORT}`, description: "Local" },
-      { url: "https://your-app.up.railway.app", description: "Production" },
+      { url: "https://rent-a-room-backend-production.up.railway.app", description: "Production" },
     ],
   },
   apis: ["./src/routes/*.js"],
