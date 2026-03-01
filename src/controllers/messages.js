@@ -43,4 +43,16 @@ async function updateStatus(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { create, listAll, updateStatus };
+// DELETE /messages/:id (admin)
+async function remove(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const existing = await prisma.message.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: "Message not found" });
+    await prisma.message.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) { next(err); }
+}
+
+module.exports = { create, listAll, updateStatus, remove };

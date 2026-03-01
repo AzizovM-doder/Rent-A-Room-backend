@@ -66,4 +66,20 @@ router.get("/", authMiddleware, adminOnly, ctrl.listAll);
  */
 router.patch("/:id", authMiddleware, adminOnly, ctrl.updateStatus);
 
+/**
+ * @openapi
+ * /messages/{id}:
+ *   delete:
+ *     tags: [Messages]
+ *     summary: Delete a booking request (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ */
+router.delete("/:id", authMiddleware, adminOnly, ctrl.remove);
+
 module.exports = router;
