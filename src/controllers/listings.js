@@ -17,7 +17,7 @@ function serialize(row) {
   const imageUrl = row.image
     ? row.image.startsWith("http") || row.image.startsWith("data:")
       ? row.image
-      : `${process.env.BASE_URL || "https://rent-a-room-backend-production.up.railway.app"}/${row.image}`
+      : `${process.env.BASE_URL}/${row.image}`
     : "";
 
   return {
