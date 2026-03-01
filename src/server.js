@@ -70,6 +70,16 @@ const swaggerOptions = {
             about: { type: "string" }, image: { type: "string" }, createdAt: { type: "string" },
           },
         },
+        UpdateListing: {
+          type: "object",
+          properties: {
+            name: { $ref: "#/components/schemas/I18nString" },
+            location: { $ref: "#/components/schemas/I18nString" },
+            type: { $ref: "#/components/schemas/I18nString" },
+            rooms: { type: "integer" }, price: { type: "integer" },
+            about: { type: "string" }, image: { type: "string" }
+          },
+        },
         Error: { type: "object", properties: { error: { type: "string" } } },
       },
     },
