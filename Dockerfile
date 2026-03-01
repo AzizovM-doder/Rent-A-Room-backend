@@ -13,8 +13,9 @@ RUN npm ci
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy source
+# Copy source and scripts
 COPY src ./src
+COPY make-admin.js ./
 
 # ── Production image ──────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -30,6 +31,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/make-admin.js ./
 COPY package.json ./
 
 # Run the server
