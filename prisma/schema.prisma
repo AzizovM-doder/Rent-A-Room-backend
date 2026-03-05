@@ -34,6 +34,16 @@ model Listing {
   updatedAt  DateTime  @updatedAt
 
   messages   Message[]
+
+  status     ListingStatus @default(PENDING)
+  userId     Int?
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ListingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 model User {
@@ -46,6 +56,7 @@ model User {
   createdAt DateTime  @default(now())
 
   messages  Message[]
+  listings  Listing[]
 }
 
 enum MessageStatus {

@@ -20,7 +20,7 @@ function serialize(row) {
       : `${process.env.BASE_URL || "https://rent-a-room-backend-production.up.railway.app"}/${row.image}`
     : "";
 
-  return {
+  const result = {
     id: row.id,
     name: { en: row.nameEn, ru: row.nameRu, tj: row.nameTj },
     location: { en: row.locationEn, ru: row.locationRu, tj: row.locationTj },
@@ -30,7 +30,13 @@ function serialize(row) {
     about: row.about,
     image: imageUrl,
     createdAt: row.createdAt,
+    status: row.status,
+    userId: row.userId,
   };
+  if (row.user) {
+    result.user = { id: row.user.id, name: row.user.name, email: row.user.email, phone: row.user.phone };
+  }
+  return result;
 }
 
 function parseI18n(raw) {
@@ -79,9 +85,15 @@ function flatten(body, file) {
 
 // ── Controllers ───────────────────────────────────────────────────
 
-async function listAll(_req, res, next) {
+async function listAll(req, res, next) {
   try {
-    const rows = await prisma.listing.findMany({ orderBy: { createdAt: "desc" } });
+    const isAdmin = req.user && req.user.isAdmin;
+    const where = isAdmin ? {} : { status: "ACCEPTED" };
+    const rows = await prisma.listing.findMany({ 
+      where, 
+      orderBy: { createdAt: "desc" },
+      include: { user: true }
+    });
     res.json(rows.map(serialize));
   } catch (err) { next(err); }
 }
@@ -90,8 +102,19 @@ async function getById(req, res, next) {
   try {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-    const row = await prisma.listing.findUnique({ where: { id } });
+    const row = await prisma.listing.findUnique({ 
+      where: { id },
+      include: { user: true } 
+    });
     if (!row) return res.status(404).json({ error: "Listing not found" });
+    
+    // Only admins or the owner can see pending/rejected listings
+    const isAdmin = req.user && req.user.isAdmin;
+    const isOwner = req.user && req.user.id === row.userId;
+    if (row.status !== "ACCEPTED" && !isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Listing is pending approval or rejected" });
+    }
+    
     res.json(serialize(row));
   } catch (err) { next(err); }
 }
@@ -106,6 +129,10 @@ async function create(req, res, next) {
     if (isNaN(data.rooms)) return res.status(400).json({ error: "rooms must be a number" });
     if (isNaN(data.price)) return res.status(400).json({ error: "price must be a number" });
 
+    // Auto-approve if created by admin. Otherwise PENDING.
+    const isAdmin = req.user && req.user.isAdmin;
+    const status = isAdmin ? "ACCEPTED" : "PENDING";
+
     const row = await prisma.listing.create({
       data: {
         nameEn: data.nameEn, nameRu: data.nameRu ?? "", nameTj: data.nameTj ?? "",
@@ -113,7 +140,10 @@ async function create(req, res, next) {
         typeEn: data.typeEn, typeRu: data.typeRu ?? "", typeTj: data.typeTj ?? "",
         rooms: data.rooms, price: data.price,
         about: data.about ?? "", image: data.image ?? "",
+        status,
+        userId: req.user ? req.user.id : null,
       },
+      include: { user: true }
     });
     res.status(201).json(serialize(row));
   } catch (err) { next(err); }
@@ -141,14 +171,42 @@ async function remove(req, res, next) {
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
     const existing = await prisma.listing.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Listing not found" });
+    
+    const isAdmin = req.user && req.user.isAdmin;
+    if (!isAdmin && existing.userId !== req.user.id) {
+       return res.status(403).json({ error: "Forbidden: Not owner or admin" });
+    }
+
     await prisma.listing.delete({ where: { id } });
     res.status(204).send();
+  } catch (err) { next(err); }
+}
+
+async function updateStatus(req, res, next) {
+  try {
+    if (!req.user || !req.user.isAdmin) return res.status(403).json({ error: "Forbidden: Admins only" });
+
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+    const { status } = req.body;
+    if (!["PENDING", "ACCEPTED", "REJECTED"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const row = await prisma.listing.update({ 
+      where: { id }, 
+      data: { status },
+      include: { user: true }
+    });
+    res.json(serialize(row));
   } catch (err) { next(err); }
 }
 
 async function stats(_req, res, next) {
   try {
     const rows = await prisma.listing.findMany({
+      where: { status: "ACCEPTED" },
       select: { locationEn: true, typeEn: true, price: true },
     });
     const total = rows.length;
@@ -161,4 +219,4 @@ async function stats(_req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listAll, getById, stats, create, update, remove };
+module.exports = { listAll, getById, stats, create, update, updateStatus, remove };

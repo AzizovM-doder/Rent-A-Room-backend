@@ -2,6 +2,8 @@
 
 const { Router } = require("express");
 const ctrl = require("../controllers/listings");
+const auth = require("../middleware/auth");
+const optionalAuth = require("../middleware/optionalAuth");
 
 const router = Router();
 
@@ -36,8 +38,8 @@ const router = Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/stats", ctrl.stats);
-router.get("/:id", ctrl.getById);
-router.get("/", ctrl.listAll);
+router.get("/:id", optionalAuth, ctrl.getById);
+router.get("/", optionalAuth, ctrl.listAll);
 
 /**
  * @openapi
@@ -92,7 +94,7 @@ router.get("/", ctrl.listAll);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", ctrl.create);
+router.post("/", auth, ctrl.create);
 
 /**
  * @openapi
@@ -140,7 +142,7 @@ router.post("/", ctrl.create);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:id", ctrl.update);
+router.put("/:id", auth, ctrl.update);
 
 /**
  * @openapi
@@ -176,7 +178,8 @@ router.put("/:id", ctrl.update);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch("/:id", ctrl.update);
+router.patch("/:id", auth, ctrl.update);
+router.patch("/:id/status", auth, ctrl.updateStatus);
 
 /**
  * @openapi
@@ -208,6 +211,6 @@ router.patch("/:id", ctrl.update);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete("/:id", ctrl.remove);
+router.delete("/:id", auth, ctrl.remove);
 
 module.exports = router;
